@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>샵라이브가 일하는 방식</title>
+<meta name="description" content="가장 비싼 단계는 더 이상 코드 작성이 아닙니다. 그래서 샵라이브는 일하는 방식부터 다시 고민합니다">
+<meta name="author" content="이규원 · 샵라이브 CTO">
+<link rel="canonical" href="https://gyuwon.github.io/how-shoplive-works/">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="assets/icons/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+<link rel="icon" href="assets/icons/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#1A1E23">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:site_name" content="샵라이브가 일하는 방식">
+<meta property="og:title" content="샵라이브가 일하는 방식">
+<meta property="og:description" content="가장 비싼 단계는 더 이상 코드 작성이 아닙니다. 그래서 샵라이브는 일하는 방식부터 다시 고민합니다">
+<meta property="og:url" content="https://gyuwon.github.io/how-shoplive-works/">
+<meta property="og:image" content="https://gyuwon.github.io/how-shoplive-works/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="샵라이브가 일하는 방식 · 이규원 · 샵라이브 CTO">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="샵라이브가 일하는 방식">
+<meta name="twitter:description" content="가장 비싼 단계는 더 이상 코드 작성이 아닙니다. 그래서 샵라이브는 일하는 방식부터 다시 고민합니다">
+<meta name="twitter:image" content="https://gyuwon.github.io/how-shoplive-works/og.png">
+<link rel="preload" href="assets/fonts/Pretendard-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/Pretendard-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
+<style>@font-face{font-family:'Pretendard';src:url(assets/fonts/Pretendard-Regular.woff2) format('woff2'),url(assets/fonts/Pretendard-Regular.woff) format('woff');font-weight:400;font-display:swap}
+@font-face{font-family:'Pretendard SemiBold';src:url(assets/fonts/Pretendard-SemiBold.woff2) format('woff2'),url(assets/fonts/Pretendard-SemiBold.woff) format('woff');font-weight:400 700;font-display:swap}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#0E1013;overflow:hidden}
+body{font-family:'Pretendard',Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center}
+#stage>section{word-break:keep-all;position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;opacity:0;visibility:hidden;transition:opacity .45s ease,visibility 0s linear .45s}
+#stage>section.active{opacity:1;visibility:visible;transition:opacity .45s ease}
+x-shape{display:block;clip-path:polygon(0 30%,72% 30%,72% 0,100% 50%,72% 100%,72% 70%,0 70%)}
+[data-build-in]{transition:opacity .5s ease,transform .5s ease}
+[data-build-in].pending{opacity:0}
+[data-build-in="rise"].pending{transform:translateY(40px)}
+#hud{position:fixed;right:16px;bottom:12px;font:13px/1 Arial,sans-serif;color:#6F7985;user-select:none;opacity:.8}
+#hud button{background:none;border:1px solid #343A42;color:#979FAA;border-radius:6px;padding:6px 10px;margin-left:6px;cursor:pointer;font:inherit}
+@media print{html,body{overflow:visible;background:#fff}#hud{display:none}#stage{position:static;transform:none!important}#stage>section{position:relative;opacity:1;visibility:visible;page-break-after:always}[data-build-in].pending{opacity:1;transform:none}@page{size:1920px 1080px;margin:0}}</style></head>
+<body><div id="stage">
+<section id="s01" data-transition="fade" style="background:#F9FAFB;color:#343A42;font-family:'Pretendard', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<img src="assets/img/shoplive-logo-light.svg" alt="Shoplive 로고" style="width:240px;height:60px;object-fit:contain">
+<div style="display:flex;flex-direction:column;gap:32px">
+<p style="font-size:30px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">Session 3 · AI 시대 개발 역량 세미나</p>
+<h1 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:120px;font-weight:600;line-height:1.1;letter-spacing:-2px;color:#1A1E23">샵라이브가 일하는 방식</h1>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:end">
+<p style="font-size:32px;color:#343A42">이규원 · 샵라이브 CTO</p>
+<p style="font-size:28px;color:#6F7985">2026. 10. 24 · 패스트캠퍼스</p>
+</div>
+</section>
+<section id="s02" style="background:#F9FAFB;color:#343A42;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Agentic Coding</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Spec-Driven Development</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Context Engineering</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Harness Engineering</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Subagents</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Agent Skills</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">MCP</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Evals</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">AI Code Review</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">REA</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">A2A</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Background Agents</p>
+</div>
+<div data-build-in="fade" style="position:absolute;left:0;top:0;width:1920px;height:1080px;background:rgba(249,250,251,0.92);padding:128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:96px;font-weight:600;line-height:1.2;letter-spacing:-2px;color:#1A1E23">오늘은 이런 주제를 다루지 않습니다</h2>
+<p style="font-size:40px;line-height:1.4;color:#525B66">이것들이 바꿔 놓은 다른 것을 이야기합니다</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">02</p>
+</section>
+<section id="s04" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:30px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">샵라이브</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.2;letter-spacing:-1px;color:#1A1E23">기술과 제품 중심의 글로벌 비디오 커머스 SaaS</h2>
+</div>
+<div style="display:flex;gap:56px;align-items:center">
+<div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:40px 32px">
+<div style="display:flex;flex-direction:column;gap:8px;border-top:2px solid #1A1E23;padding:24px 0px 0px 0px">
+<p style="font-size:80px;line-height:1;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">300+</p>
+<p style="font-size:28px;line-height:1.4">엔터프라이즈 고객사</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;border-top:2px solid #1A1E23;padding:24px 0px 0px 0px">
+<p style="font-size:80px;line-height:1;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">20+</p>
+<p style="font-size:28px;line-height:1.4">글로벌 서비스 국가</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;border-top:2px solid #1A1E23;padding:24px 0px 0px 0px">
+<p style="font-size:80px;line-height:1;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">1,200+</p>
+<p style="font-size:28px;line-height:1.4">매일 진행되는 라이브 방송</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;border-top:2px solid #1A1E23;padding:24px 0px 0px 0px">
+<p style="font-size:80px;line-height:1;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">2억+</p>
+<p style="font-size:28px;line-height:1.4">Mobile SDK 적용 고객사 앱 MAU</p>
+</div>
+</div>
+<video src="assets/video/live.mp4" poster="assets/img/live-poster.jpg" muted loop playsinline preload="none" aria-label="여러 업종 고객사의 라이브 방송 12개가 동시에 재생되는 장면" style="width:800px;height:386px;object-fit:cover;border:1px solid #EAEDF1;border-radius:12px;display:block"></video>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">03</p>
+</section>
+<section id="s27" style="background:#1A1E23;color:#F9FAFB;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:space-between">
+<img src="assets/img/global-network.png" alt="점으로 그린 세계지도 위 여러 대륙의 거점이 붉은 선으로 연결된 글로벌 송출 네트워크" style="position:absolute;left:0;top:0;width:1920px;height:1080px;object-fit:cover;opacity:0.45;filter:blur(3px)">
+<div style="position:relative;display:flex;flex-direction:column;gap:24px;padding-top:24px">
+<p style="font-size:26px;color:#FE7977;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">시스템 규모와 복잡도</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:88px;font-weight:600;line-height:1.2;letter-spacing:-2px;color:#F9FAFB">멈추면 안 되는<br>실시간 시스템입니다</h2>
+<p style="font-size:36px;line-height:1.4;color:#C6CED7">20개국 이상에서, 0.5초 이내로 라이브를 송출합니다</p>
+</div>
+<div style="position:relative;display:flex;gap:24px">
+<div style="background:rgba(26,30,35,0.82);border:1px solid #343A42;border-radius:12px;padding:32px 40px;display:flex;flex-direction:column;gap:10px;flex:1"><h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;color:#F9FAFB">WebRTC 초저지연</h3><p style="font-size:26px;line-height:1.45;color:#C6CED7">송출부터 시청까지 직접 만든 스트리밍 스택</p></div>
+<div style="background:rgba(26,30,35,0.82);border:1px solid #343A42;border-radius:12px;padding:32px 40px;display:flex;flex-direction:column;gap:10px;flex:1"><h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;color:#F9FAFB">버스트 트래픽</h3><p style="font-size:26px;line-height:1.45;color:#C6CED7">알림 한 번에 시청자가 몰려도 끊기면 안 됩니다</p></div>
+<div style="background:rgba(26,30,35,0.82);border:1px solid #343A42;border-radius:12px;padding:32px 40px;display:flex;flex-direction:column;gap:10px;flex:1"><h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;color:#F9FAFB">실시간으로 연동된 기능</h3><p style="font-size:26px;line-height:1.45;color:#C6CED7">영상 · 채팅 · 커머스 · AI가 동시에 작동합니다</p></div>
+<div style="background:rgba(26,30,35,0.82);border:1px solid #E83B3B;border-radius:12px;padding:32px 40px;display:flex;flex-direction:column;gap:10px;flex:1"><h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;color:#FE7977">장애는 곧 매출 손실</h3><p style="font-size:26px;line-height:1.45;color:#C6CED7">방송이 멈추면 고객 매출도 그 자리에서 멈춥니다</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#979FAA">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#979FAA;text-align:right">04</p>
+</section>
+<section id="s05" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<p style="font-size:30px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">모든 판단의 출발점</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:112px;font-weight:600;line-height:1.15;letter-spacing:-3px;color:#1A1E23">고객 비즈니스의<br>실제 성장</h2>
+<p style="font-size:40px;line-height:1.5;color:#525B66;word-break:keep-all">설치로 끝내지 않습니다<br>라이브 기획과 국내외 맞춤 개발을 넘어, 고객의 매출 성장까지 함께합니다</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">05</p>
+</section>
+<section id="s26" data-transition="fade" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.3;letter-spacing:-2px;color:#1A1E23">샵라이브의 성장을 유지하고 더 가속하려면<br>어떻게 일해야 할지, 계속 고민합니다</h2>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">06</p>
+</section>
+<section id="s07" data-transition="fade" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:80px">
+<div style="display:flex;flex-direction:column;gap:24px">
+<p style="font-size:28px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">과거의 가정</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.2;letter-spacing:-2px;color:#1A1E23;white-space:nowrap">“가장 비싼 단계는 코드 작성이다”</h2>
+<p style="font-size:38px;line-height:1.4;color:#525B66">그래서 코드를 제대로 쓰려고, 앞 단계에 공을 많이 들였습니다</p>
+</div>
+<div style="display:flex;align-items:center;gap:16px">
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#FFFFFF;border:2px solid #E0E5EB;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#525B66">요구사항 문서</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#979FAA">며칠</p></div>
+<x-shape kind="arrow-right" style="width:36px;height:18px;flex:none;background:#979FAA"></x-shape>
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#FFFFFF;border:2px solid #E0E5EB;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#525B66">디자인 시안</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#979FAA">며칠</p></div>
+<x-shape kind="arrow-right" style="width:36px;height:18px;flex:none;background:#979FAA"></x-shape>
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#FFFFFF;border:2px solid #E0E5EB;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#525B66">아키텍처 설계</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#979FAA">며칠</p></div>
+<x-shape kind="arrow-right" style="width:36px;height:18px;flex:none;background:#979FAA"></x-shape>
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#FFFFFF;border:2px solid #E0E5EB;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#525B66">티켓·스프린트<br>계획</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#979FAA">며칠</p></div>
+<x-shape kind="arrow-right" style="width:36px;height:18px;flex:none;background:#979FAA"></x-shape>
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#1A1E23;border:2px solid #1A1E23;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#F9FAFB">코드 작성</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#FE7977">몇 주</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">07</p>
+</section>
+<section id="s08" data-transition="fade" style="background:#1A1E23;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:80px">
+<div style="display:flex;flex-direction:column;gap:24px">
+<p style="font-size:28px;color:#FE7977;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">깨진 가정</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.2;letter-spacing:-2px;color:#F9FAFB;white-space:nowrap">Claude Code 이후, 이 가정은 깨졌습니다</h2>
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-weight:600;font-size:38px;line-height:1.4;color:#FE7977">이제 가장 싼 단계가 코드 작성입니다</p>
+</div>
+<div style="display:flex;align-items:center;gap:16px">
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#F9FAFB;border:2px solid #F9FAFB;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#1A1E23">요구사항 문서</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#E83B3B">며칠</p></div>
+<x-shape kind="arrow-right" style="width:36px;height:18px;flex:none;background:#6F7985"></x-shape>
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#F9FAFB;border:2px solid #F9FAFB;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#1A1E23">디자인 시안</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#E83B3B">며칠</p></div>
+<x-shape kind="arrow-right" style="width:36px;height:18px;flex:none;background:#6F7985"></x-shape>
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#F9FAFB;border:2px solid #F9FAFB;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#1A1E23">아키텍처 설계</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#E83B3B">며칠</p></div>
+<x-shape kind="arrow-right" style="width:36px;height:18px;flex:none;background:#6F7985"></x-shape>
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#F9FAFB;border:2px solid #F9FAFB;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#1A1E23">티켓·스프린트<br>계획</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#E83B3B">며칠</p></div>
+<x-shape kind="arrow-right" style="width:36px;height:18px;flex:none;background:#6F7985"></x-shape>
+<div style="flex:1;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:transparent;border:2px dashed #6F7985;border-radius:12px;padding:0 12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.3;text-align:center;color:#979FAA">코드 작성</p><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#6F7985">몇 분</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#979FAA">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#979FAA;text-align:right">08</p>
+</section>
+<section id="s10" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 200px;display:flex;flex-direction:column;justify-content:center;gap:56px">
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.2;letter-spacing:-1.5px;color:#1A1E23">숫자로 보면 이렇습니다</h2>
+<div style="display:flex;gap:24px;height:540px">
+<div style="background:#FFFFFF;border:1px solid #EAEDF1;border-radius:12px;padding:48px 56px;display:flex;flex-direction:column;flex:1;justify-content:space-between">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;color:#C52628">Anthropic</p>
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:220px;font-weight:600;line-height:1;letter-spacing:-6px;color:#1A1E23">8<span style="font-size:96px;letter-spacing:0">배</span></p>
+<p style="font-size:30px;line-height:1.5">엔지니어 1인당 하루 머지하는 코드량<br>2024년 대비, 2026년 2분기</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid #EAEDF1;border-radius:12px;padding:48px 56px;display:flex;flex-direction:column;flex:1;justify-content:space-between">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;color:#C52628">Google</p>
+<div style="display:flex;gap:40px;align-items:flex-end;height:340px">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:36px;font-weight:600;color:#6F7985">25%</p><div style="width:100%;height:75px;background:#E0E5EB;border-radius:8px 8px 0 0"></div><p style="font-size:24px;color:#6F7985">2024.10</p></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:36px;font-weight:600;color:#6F7985">50%</p><div style="width:100%;height:150px;background:#C6CED7;border-radius:8px 8px 0 0"></div><p style="font-size:24px;color:#6F7985">2025 하반기</p></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:36px;font-weight:600;color:#E83B3B">75%</p><div style="width:100%;height:225px;background:#E83B3B;border-radius:8px 8px 0 0"></div><p style="font-size:24px;color:#6F7985">2026.4</p></div>
+</div>
+<p style="font-size:30px;line-height:1.5">신규 코드 중 AI가 생성한 비율</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:120px;width:1664px;font-size:20px;color:#979FAA">출처: Anthropic Institute, “When AI builds itself” (2026.6) · Google CEO Sundar Pichai 블로그 (2026.4)</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">09</p>
+</section>
+<section id="s09" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:64px">
+<p style="font-size:36px;color:#6F7985">많은 조직이 AI로 이 흐름을 더 빨리 진행하려 합니다</p>
+<div style="display:flex;gap:16px;align-items:center">
+<div style="flex:1;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:12px;height:150px;display:flex;align-items:center;justify-content:center;padding:0 16px"><p style="font-size:32px;line-height:1.3;text-align:center;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">요구사항 문서</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#979FAA"></x-shape>
+<div style="flex:1;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:12px;height:150px;display:flex;align-items:center;justify-content:center;padding:0 16px"><p style="font-size:32px;line-height:1.3;text-align:center;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">디자인 시안</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#979FAA"></x-shape>
+<div style="flex:1;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:12px;height:150px;display:flex;align-items:center;justify-content:center;padding:0 16px"><p style="font-size:32px;line-height:1.3;text-align:center;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">아키텍처 설계</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#979FAA"></x-shape>
+<div style="flex:1;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:12px;height:150px;display:flex;align-items:center;justify-content:center;padding:0 16px"><p style="font-size:32px;line-height:1.3;text-align:center;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">티켓·스프린트<br>계획</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#979FAA"></x-shape>
+<div style="flex:1;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:12px;height:150px;display:flex;align-items:center;justify-content:center;padding:0 16px"><p style="font-size:32px;line-height:1.3;text-align:center;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">코드 작성</p></div>
+</div>
+<p style="position:absolute;left:128px;top:720px;width:1664px;font-size:48px;line-height:1.3;color:#1A1E23;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif" data-build-in="fade">문제는, 이 흐름 자체가 깨진 가정 위에 있다는 것입니다</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">10</p>
+</section>
+<section id="s25" data-transition="fade" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.3;letter-spacing:-1.5px;color:#1A1E23">기존 프로세스로는<br>더 이상 효율에서 앞설 수 없습니다</h2>
+<p style="font-size:44px;line-height:1.4;color:#525B66">그렇다고 새 규칙을 세울 만큼 지식이 충분히 쌓이지도 않았습니다</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">11</p>
+</section>
+<section id="s20" data-transition="fade" style="background:#1A1E23;color:#F9FAFB;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:96px;font-weight:600;line-height:1.25;letter-spacing:-2px;color:#F9FAFB">샵라이브는 도구보다<br>목적을 먼저 봅니다</h2>
+<p style="font-size:40px;line-height:1.4;color:#C6CED7">어떤 도구가 모든 팀의 효율을 높일지, 아직 확신할 수 없습니다</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#979FAA">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#979FAA;text-align:right">12</p>
+</section>
+<section id="s06" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<p style="font-size:30px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">핵심가치</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:56px;font-weight:600;line-height:1.3;letter-spacing:-1px;color:#1A1E23">목적을 향한 판단 기준은 이 네 가지입니다</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #EAEDF1;border-radius:12px;padding:40px 48px">
+<h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#1A1E23">Customer First, Always</h3>
+<p style="font-size:28px;line-height:1.5">모든 의사결정은 고객에서 시작하고 고객으로 끝냅니다</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #EAEDF1;border-radius:12px;padding:40px 48px">
+<h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#1A1E23">Solve with Product &amp; Technology</h3>
+<p style="font-size:28px;line-height:1.5">문제는 수작업이 아닌 프로덕트와 기술로 해결합니다</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #EAEDF1;border-radius:12px;padding:40px 48px">
+<h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#1A1E23">Move Fast, Ship Fast</h3>
+<p style="font-size:28px;line-height:1.5">완벽함을 기다리지 않고 빠르게 실행하고 배웁니다</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #EAEDF1;border-radius:12px;padding:40px 48px">
+<h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;color:#1A1E23">Team Player with Ownership</h3>
+<p style="font-size:28px;line-height:1.5">신뢰를 바탕으로 협업하고, 결과에 책임집니다</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">13</p>
+</section>
+<section id="s12" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px">
+<p style="position:absolute;left:0;width:1920px;text-align:center;top:290px;font-size:26px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">Customer First, Always</p>
+<p style="position:absolute;left:0;width:1920px;text-align:center;top:370px;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:56px;font-weight:600;color:#525B66">요구사항은 누가 정리할까요?</p>
+<p style="position:absolute;left:0;width:1920px;text-align:center;top:470px;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:240px;font-weight:600;line-height:1;letter-spacing:-6px;color:#1A1E23" data-build-in="rise">엔지니어</p>
+<p style="position:absolute;left:0;width:1920px;text-align:center;top:780px;font-size:40px;color:#525B66" data-build-in="fade">고객의 요구를 직접 듣고, 직접 정리합니다</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">14</p>
+</section>
+<section id="s13" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:72px">
+<p style="font-size:26px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">Customer First, Always</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.3;letter-spacing:-1.5px;color:#1A1E23;font-size:64px">엔지니어가 고객과 비즈니스를 직접 이해합니다<br>국내외 고객과 슬랙에서 바로 소통합니다</h2>
+<div style="display:flex;align-items:center;gap:0">
+<div style="background:#1A1E23;border-radius:12px;padding:40px 56px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;color:#F9FAFB">엔지니어</p></div>
+<div style="flex:1;height:2px;background:#979FAA"></div>
+<div style="border:2px dashed #C6CED7;border-radius:12px;padding:40px 56px;opacity:.6"><p style="font-size:36px;color:#979FAA;text-decoration:line-through">요구사항 전달 단계</p></div>
+<div style="flex:1;height:2px;background:#979FAA"></div>
+<div style="background:#FFFFFF;border:1px solid #EAEDF1;border-radius:12px;padding:40px 56px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;color:#1A1E23">고객 · 비즈니스</p></div>
+</div>
+<p style="font-size:40px;line-height:1.4;color:#525B66">의사소통 구조가 단순해지면서 비용도, 전달 오류도 줄어듭니다</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">15</p>
+</section>
+<section id="s14" style="word-break:keep-all;background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:0">
+<div style="position:absolute;left:128px;top:270px;width:1664px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:26px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">Move Fast, Ship Fast</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.25;letter-spacing:-1.5px;color:#1A1E23">설명하기보다 만들어서 보여줍니다</h2>
+</div>
+<div data-build-in="rise" style="position:absolute;left:128px;top:505px;width:523px;display:flex;flex-direction:column;gap:24px;border-top:3px solid #1A1E23;padding-top:40px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;color:#C52628">디자인</p>
+<h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:50px;font-weight:600;line-height:1.25;letter-spacing:-1px;color:#1A1E23">Figma보다 프로토타입</h3>
+<p style="font-size:28px;line-height:1.5;color:#525B66">시안부터 그리지 않습니다<br>동작하는 프로토타입부터 만듭니다</p>
+</div>
+<div data-build-in="rise" style="position:absolute;left:699px;top:505px;width:523px;display:flex;flex-direction:column;gap:24px;border-top:3px solid #1A1E23;padding-top:40px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;color:#C52628">작업 관리</p>
+<h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:50px;font-weight:600;line-height:1.25;letter-spacing:-1px;color:#1A1E23">Jira는 선택</h3>
+<p style="font-size:28px;line-height:1.5;color:#525B66">이슈 트래커는 느립니다<br>스프레드시트나 위키 문서로 충분합니다</p>
+</div>
+<div data-build-in="rise" style="position:absolute;left:1269px;top:505px;width:523px;display:flex;flex-direction:column;gap:24px;border-top:3px solid #1A1E23;padding-top:40px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;color:#C52628">일정</p>
+<h3 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:50px;font-weight:600;line-height:1.25;letter-spacing:-1px;color:#1A1E23">스프린트 없이</h3>
+<p style="font-size:28px;line-height:1.5;color:#525B66">이터레이션 단위로 묶지 않습니다<br>끝나는 대로 바로 출시합니다</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">16</p>
+</section>
+<section id="s15" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:88px">
+<div style="display:flex;flex-direction:column;gap:32px">
+<p style="font-size:26px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">Move Fast, Ship Fast</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:72px;font-weight:600;line-height:1.25;letter-spacing:-1.5px;color:#1A1E23">상당수의 작업은 슬랙 스레드 하나에서 끝납니다</h2>
+</div>
+<div style="display:flex;align-items:stretch;gap:12px">
+<div style="flex:1;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;align-items:center;gap:12px">
+<div style="width:190px;flex:none;display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;color:#979FAA">전통적 흐름</p>
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:48px;font-weight:600;line-height:1.1;color:#979FAA">몇 주</p>
+</div>
+<div style="background:#FFFFFF;color:#979FAA;border:1px solid #E0E5EB;border-radius:12px;height:120px;padding:0 12px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;line-height:1.3">요구사항 문서</p></div>
+<x-shape kind="arrow-right" style="width:32px;height:16px;flex:none;background:#C6CED7"></x-shape>
+<div style="background:#FFFFFF;color:#979FAA;border:1px solid #E0E5EB;border-radius:12px;height:120px;padding:0 12px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;line-height:1.3">디자인 시안</p></div>
+<x-shape kind="arrow-right" style="width:32px;height:16px;flex:none;background:#C6CED7"></x-shape>
+<div style="background:#FFFFFF;color:#979FAA;border:1px solid #E0E5EB;border-radius:12px;height:120px;padding:0 12px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;line-height:1.3">아키텍처 설계</p></div>
+<x-shape kind="arrow-right" style="width:32px;height:16px;flex:none;background:#C6CED7"></x-shape>
+<div style="background:#FFFFFF;color:#979FAA;border:1px solid #E0E5EB;border-radius:12px;height:120px;padding:0 12px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;line-height:1.3">티켓·스프린트<br>계획</p></div>
+<x-shape kind="arrow-right" style="width:32px;height:16px;flex:none;background:#C6CED7"></x-shape>
+<div style="background:#FFFFFF;color:#979FAA;border:1px solid #E0E5EB;border-radius:12px;height:120px;padding:0 12px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;line-height:1.3">코드 작성</p></div>
+<x-shape kind="arrow-right" style="width:32px;height:16px;flex:none;background:#C6CED7"></x-shape>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<div style="width:190px;flex:none;display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;color:#1A1E23">샵라이브</p>
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:48px;font-weight:600;line-height:1.1;color:#E83B3B">1~3일</p>
+</div>
+<div style="background:#1A1E23;color:#F9FAFB;border:1px solid #1A1E23;border-radius:12px;height:120px;padding:0 12px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;line-height:1.3">스레드 요청</p></div>
+<x-shape kind="arrow-right" style="width:32px;height:16px;flex:none;background:#1A1E23"></x-shape>
+<div style="background:#1A1E23;color:#F9FAFB;border:1px solid #1A1E23;border-radius:12px;height:120px;padding:0 12px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;line-height:1.3">프로토타입 검토</p></div>
+<x-shape kind="arrow-right" style="width:32px;height:16px;flex:none;background:#1A1E23"></x-shape>
+<div style="background:#1A1E23;color:#F9FAFB;border:1px solid #1A1E23;border-radius:12px;height:120px;padding:0 12px;flex:1;display:flex;align-items:center;justify-content:center;text-align:center"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:26px;font-weight:600;line-height:1.3">코드 작성</p></div>
+<x-shape kind="arrow-right" style="width:32px;height:16px;flex:none;background:#1A1E23"></x-shape>
+</div>
+</div>
+<div style="width:120px;flex:none;display:flex;align-items:center;justify-content:center;background:#EAEDF1;border:1px solid #E0E5EB;border-radius:12px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:36px;font-weight:600;color:#525B66;writing-mode:vertical-rl;letter-spacing:12px">출시</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">17</p>
+</section>
+<section id="s16" data-transition="fade" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-size:26px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">Team Player with Ownership</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.3;letter-spacing:-1.5px;color:#1A1E23;font-size:96px;letter-spacing:-2px">프로세스 없이<br>굴러가냐고요?</h2>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">18</p>
+</section>
+<section id="s17" data-transition="fade" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-size:26px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">Team Player with Ownership</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.3;letter-spacing:-1.5px;color:#1A1E23">획일화된 프로세스를 줄인 자리는<br>개인의 책임이 채웁니다</h2>
+<p style="font-size:40px;line-height:1.4;color:#525B66">그 책임의 기준은 각자의 판단이 아니라 <span style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-weight:600;color:#1A1E23">핵심가치</span>입니다</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">19</p>
+</section>
+<section id="s18" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;flex-direction:row;align-items:center;gap:96px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<p style="font-size:26px;color:#C52628;font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif">Team Player with Ownership</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.3;letter-spacing:-1.5px;color:#1A1E23;font-size:72px">Sloppy한 소통은<br>용납하지 않습니다</h2>
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:34px;color:#1A1E23">TL;DR이 먼저입니다</p>
+<p style="font-size:34px;color:#1A1E23">내 시간을 아끼려고 남의 시간을 쓰지 않습니다</p>
+</div>
+</div>
+<div style="width:720px;display:flex;flex-direction:column;gap:20px">
+<div style="background:#FFFFFF;border:1px solid #EAEDF1;border-radius:12px;padding:32px 40px;display:flex;flex-direction:column;gap:14px;opacity:.55">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:22px;font-weight:600;color:#979FAA">이렇게 쓰지 않습니다</p>
+<p style="font-size:24px;line-height:1.55;color:#6F7985">안녕하세요, 어제부터 이것저것 확인해 봤는데요, 원인이 몇 가지 있을 수 있을 것 같아서 로그를 계속 보고 있습니다. 혹시 비슷한 거 보신 분 있으면…</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid #EAEDF1;border-left:6px solid #E83B3B;border-radius:12px;padding:32px 40px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:22px;font-weight:600;color:#C52628">이렇게 씁니다</p>
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:30px;font-weight:600;line-height:1.4;color:#1A1E23">TL;DR 원인은 캐시 만료 설정입니다. 오늘 배포로 해결합니다.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;line-height:1.5;color:#525B66">· 영향: 일부 화면에서 상품 정보 갱신 지연</p>
+<p style="font-size:24px;line-height:1.5;color:#525B66">· 조치: 만료 시간 수정, 오늘 오후 배포</p>
+<p style="font-size:24px;line-height:1.5;color:#525B66">· 요청: 배포 후 고객사 화면 확인 부탁드립니다</p>
+</div>
+</div>
+<p style="font-size:20px;color:#979FAA">예시 메시지</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">20</p>
+</section>
+<section id="s19" data-transition="fade" style="background:#F9FAFB;color:#343A42;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Agentic Coding</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Spec-Driven Development</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Context Engineering</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Harness Engineering</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Subagents</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Agent Skills</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">MCP</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Evals</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">AI Code Review</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">REA</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">A2A</p>
+<p style="font-size:40px;background:#FFFFFF;border:1px solid #E0E5EB;border-radius:9999px;padding:16px 32px;color:#1A1E23">Background Agents</p>
+</div>
+<div data-build-in="fade" style="position:absolute;left:0;top:0;width:1920px;height:1080px;background:rgba(249,250,251,0.92);padding:128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-size:40px;line-height:1.4;color:#6F7985">도구 학습과 엔지니어링에도 많이 투자합니다</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:96px;font-weight:600;line-height:1.2;letter-spacing:-2px;color:#1A1E23">하지만 모두가<br><span style="color:#C52628">목적</span>에 더 집중합니다</h2>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">21</p>
+</section>
+<section id="s22" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:56px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:56px;font-weight:600;line-height:1.35;color:#6F7985">가장 비싼 단계는<br>더 이상 코드 작성이 아닙니다</p>
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:80px;font-weight:600;line-height:1.3;letter-spacing:-1.5px;color:#1A1E23;font-size:88px;letter-spacing:-2px">그래서 일하는 방식부터<br>다시 고민합니다</h2>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">22</p>
+</section>
+<section id="s28" data-transition="fade" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:72px">
+<div style="display:flex;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;padding-right:64px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:28px;font-weight:600;color:#6F7985">에이전트를 써도 필요한 기본기</p>
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:96px;font-weight:600;line-height:1.15;letter-spacing:-2px;color:#1A1E23">견고한<br>기술 지식</p>
+</div>
+<div style="width:2px;flex:none;background:#E0E5EB"></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;padding-left:64px">
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:28px;font-weight:600;color:#6F7985">익숙한 방식을 깨는 힘</p>
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:96px;font-weight:600;line-height:1.15;letter-spacing:-2px;color:#C52628">파괴적인<br>창의성</p>
+</div>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#1A1E23">둘 다 필요한 시기입니다<br>그 둘을 묶는 것은 <span style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-weight:600">목적에 집중하는 책임감</span>입니다</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">23</p>
+</section>
+<section id="s23" data-transition="fade" style="background:#F9FAFB;color:#525B66;font-family:'Pretendard', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:36px;padding-top:40px">
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:112px;font-weight:600;line-height:1.15;letter-spacing:-3px;color:#1A1E23">정답은 저희도 모릅니다</h2>
+<p style="font-size:44px;line-height:1.4;color:#525B66">핵심가치를 더 잘 구현할 방법을 계속 찾아갑니다</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:40px">
+<div style="display:flex;flex-direction:column;border-top:3px solid #1A1E23;padding-top:32px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.3;letter-spacing:-0.5px;color:#1A1E23">Customer First,<br>Always</p></div>
+<div style="display:flex;flex-direction:column;border-top:3px solid #1A1E23;padding-top:32px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.3;letter-spacing:-0.5px;color:#1A1E23">Solve with Product<br>&amp; Technology</p></div>
+<div style="display:flex;flex-direction:column;border-top:3px solid #1A1E23;padding-top:32px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.3;letter-spacing:-0.5px;color:#1A1E23">Move Fast,<br>Ship Fast</p></div>
+<div style="display:flex;flex-direction:column;border-top:3px solid #1A1E23;padding-top:32px"><p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:40px;font-weight:600;line-height:1.3;letter-spacing:-0.5px;color:#1A1E23">Team Player<br>with Ownership</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1000px;font-size:24px;color:#6F7985">샵라이브가 일하는 방식</p>
+<p style="position:absolute;right:128px;bottom:64px;width:200px;font-size:24px;color:#6F7985;text-align:right">24</p>
+</section>
+<section id="s24" data-transition="fade" style="background:#1A1E23;color:#F9FAFB;font-family:'Pretendard', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<img src="assets/img/shoplive-logo-dark.svg" alt="Shoplive 로고" style="width:240px;height:60px;object-fit:contain;object-position:left center">
+<div style="display:flex;flex-direction:column;gap:40px">
+<h2 style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:160px;font-weight:600;line-height:1.1;letter-spacing:-4px;color:#F9FAFB">감사합니다</h2>
+<p style="font-size:40px;line-height:1.4;color:#C6CED7">이규원 · 샵라이브 CTO</p>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #343A42;padding-top:40px">
+<p style="font-size:28px;color:#979FAA">Session 3 · AI 시대 개발 역량 세미나 · 2026. 10. 24</p>
+<p style="font-family:'Pretendard SemiBold', 'Pretendard', Arial, sans-serif;font-size:32px;font-weight:600;color:#F9FAFB;background:#E83B3B;border-radius:999px;padding:12px 36px">Q&amp;A</p>
+</div>
+</section>
+</div>
+<div id="hud"><span id="cnt"></span><button id="pv" aria-label="이전">←</button><button id="nx" aria-label="다음">→</button><button id="fs" aria-label="전체 화면">⛶</button></div>
+<script>(function(){
+var st=document.getElementById('stage'),S=[].slice.call(st.children),i=0,b=0,cnt=document.getElementById('cnt');
+function builds(k){return [].slice.call(S[k].querySelectorAll('[data-build-in]'));}
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);st.style.transform='translate(-50%,-50%) scale('+s+')';}
+function show(k,step){i=Math.max(0,Math.min(S.length-1,k));var bl=builds(i);b=step==='end'?bl.length:0;
+S.forEach(function(s,j){s.classList.toggle('active',j===i);});
+bl.forEach(function(e,n){e.classList.toggle('pending',n>=b);});
+S.forEach(function(s,j){[].forEach.call(s.querySelectorAll('video'),function(v){if(j===i){var p=v.play();if(p&&p.catch)p.catch(function(){});}else v.pause();});});
+cnt.textContent=(i+1)+' / '+S.length;try{history.replaceState(null,'','#'+(i+1));}catch(_){}}
+function next(){var bl=builds(i);if(b<bl.length){bl[b].classList.remove('pending');b++;}else if(i<S.length-1)show(i+1);}
+function prev(){if(b>0){b--;builds(i)[b].classList.add('pending');}else if(i>0)show(i-1,'end');}
+addEventListener('keydown',function(e){var k=e.key;
+if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].indexOf(k)>=0){e.preventDefault();next();}
+else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].indexOf(k)>=0){e.preventDefault();prev();}
+else if(k==='Home')show(0);else if(k==='End')show(S.length-1,'end');
+else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}});
+document.getElementById('stage').addEventListener('click',function(e){(e.clientX<innerWidth/3)?prev():next();});
+var tx=null;addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+addEventListener('touchend',function(e){if(tx===null)return;var dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>40){dx<0?next():prev();}tx=null;});
+document.getElementById('pv').onclick=function(e){e.stopPropagation();prev();};
+document.getElementById('nx').onclick=function(e){e.stopPropagation();next();};
+document.getElementById('fs').onclick=function(e){e.stopPropagation();document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();};
+addEventListener('resize',fit);fit();var h=0;try{h=parseInt(location.hash.slice(1),10);}catch(_){}show(h>0?h-1:0);
+})();</script></body></html>
