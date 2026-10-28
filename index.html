@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1">
 <title>샵라이브가 일하는 방식</title>
 <meta name="description" content="가장 비싼 단계는 더 이상 코드 작성이 아닙니다. 그래서 샵라이브는 일하는 방식부터 다시 고민합니다">
 <meta name="author" content="이규원 · 샵라이브 CTO">
@@ -447,7 +447,7 @@ x-shape{display:block;clip-path:polygon(0 30%,72% 30%,72% 0,100% 50%,72% 100%,72
 <script>(function(){
 var st=document.getElementById('stage'),S=[].slice.call(st.children),i=0,b=0,cnt=document.getElementById('cnt');
 function builds(k){return [].slice.call(S[k].querySelectorAll('[data-build-in]'));}
-function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);st.style.transform='translate(-50%,-50%) scale('+s+')';}
+function fit(){var d=document.documentElement,w=d.clientWidth||innerWidth,h=d.clientHeight||innerHeight;var s=Math.min(w/1920,h/1080);st.style.transform='translate(-50%,-50%) scale('+s+')';}
 function show(k,step){i=Math.max(0,Math.min(S.length-1,k));var bl=builds(i);b=step==='end'?bl.length:0;
 S.forEach(function(s,j){s.classList.toggle('active',j===i);});
 bl.forEach(function(e,n){e.classList.toggle('pending',n>=b);});
